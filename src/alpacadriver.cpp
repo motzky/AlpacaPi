@@ -123,6 +123,8 @@
 #include	<sys/time.h>
 #include	<sys/resource.h>
 #include	<gnu/libc-version.h>
+#include	<signal.h>
+
 
 #ifdef _USE_OPENCV_
 	#include "opencv/highgui.h"
@@ -2404,10 +2406,13 @@ static void	*ListenThread(void *arg)
 
 	SocketListen_Init(kAlpacaListenPort);
 
-	while (1)
+	while (gKeepRunning)
 	{
 		SocketListen_Poll();
 	}
+
+	SocketListen_Close();
+
 	return(NULL);
 }
 
@@ -2713,6 +2718,11 @@ char	theChar;
 	}
 }
 
+void sigterm_handler(int s)
+{
+    gKeepRunning = false;
+}
+
 static	int32_t	gMainLoopCntr	=	0;
 //*****************************************************************************
 int	main(int argc, char **argv)
@@ -2723,6 +2733,15 @@ uint32_t		delayTime_microSecs;
 uint32_t		delayTimeForThisTask;
 int				ii;
 int				cameraCnt;
+
+struct sigaction sigIntHandler;
+sigIntHandler.sa_handler = sigterm_handler;
+sigemptyset(&sigIntHandler.sa_mask);
+sigIntHandler.sa_flags = 0;
+
+sigaction(SIGINT, &sigIntHandler, nullptr);
+
+
 #if defined(_ENABLE_FITS_) || defined(_ENABLE_JPEGLIB_)
 	char			lineBuffer[64];
 #endif
@@ -2955,6 +2974,11 @@ int				cameraCnt;
 
 	}
 
+	threadErr = pthread_join(threadID, nullptr);
+	if(threadErr != 0)
+	{
+		CONSOLE_DEBUG_W_INT32("Error joining listen thread\t:", threadErr);
+	}
 
 	//*	the program has been told to quit, go through and delete the objects
 	for (ii=0; ii<kMaxDevices; ii++)

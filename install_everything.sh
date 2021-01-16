@@ -11,13 +11,17 @@ clear
 
 #ASI_TAR_FILE="ASI_linux_mac_SDK_V1.14.0425.tar.bz2"
 #ASI_TAR_FILE="ASI_linux_mac_SDK_V1.14.1108.tar.bz2"
-ASI_TAR_FILE="ASI_linux_mac_SDK_V1.14.1119.tar.bz2"
+#ASI_TAR_FILE="ASI_linux_mac_SDK_V1.14.1119.tar.bz2"
+ASI_TAR_FILE="ASI_linux_mac_SDK_V1.16.3.tar.bz2"
+
 
 #EFW_TAR_FILE="EFW_linux_mac_SDK_V0.3.1205.tar"
-EFW_TAR_FILE="EFW_linux_mac_SDK_V0.4.1022.tar.bz2"
+#EFW_TAR_FILE="EFW_linux_mac_SDK_V0.4.1022.tar.bz2"
+EFW_TAR_FILE="EFW_linux_mac_SDK_V1.5.0615.tar.bz2"
 
 
-ATIK_ZIP_FILE="AtikCamerasSDK-129.zip"
+#ATIK_ZIP_FILE="AtikCamerasSDK-129.zip"
+ATIK_ZIP_FILE="AtikCamerasSDK_2020_10_19.zip"
 
 CFITS_TAR="cfitsio_latest.tar.gz"
 

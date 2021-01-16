@@ -315,7 +315,7 @@ class CameraDriver: public AlpacaDriver
 				int		RunStateMachine_TakingPicture(void);
 		virtual	void	RunStateMachine_Device(void);
 
-				void	ProcessExposureOptions(TYPE_GetPutRequestData *reqData);
+				TYPE_ASCOM_STATUS	ProcessExposureOptions(TYPE_GetPutRequestData *reqData, char *alpacaErrMsg);
 
 				void	SetSerialNumInFileName(bool enable);
 				void	SetObjectName(const char *newObjectName);

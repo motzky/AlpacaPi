@@ -22,6 +22,7 @@
 typedef	int (*SocketData_Callback)(int socket, char *htmlData, long bytesRead);
 
 int		SocketListen_Init(const int listenPortNum);
+void		SocketListen_Close(void);
 int		SocketListen_Poll(void);
 void	SocketListen_SetCallback(SocketData_Callback callBackPtr);
 

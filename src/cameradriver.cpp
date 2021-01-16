@@ -1432,7 +1432,7 @@ char	myValueString[256];
 //*	Examples
 //*		Duration=1000.0&Prefix=DSO&Suffix=GRN HTTP/1.1
 //*****************************************************************************
-void	CameraDriver::ProcessExposureOptions(TYPE_GetPutRequestData *reqData)
+TYPE_ASCOM_STATUS	CameraDriver::ProcessExposureOptions(TYPE_GetPutRequestData *reqData, char *alpacaErrMsg)
 {
 bool	durationFound;
 char	duarationString[32];
@@ -1458,6 +1458,12 @@ double	myExposure_usecs;
 		if (durationFound)
 		{
 			myExposureDuration_secs	=	atof(duarationString);
+			// CONFORM expects an exception with text "negative duration"
+			if(myExposureDuration_secs < 0.0)
+			{
+				GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "negative duration");
+				return kASCOM_Err_InvalidValue;
+			}
 //			CONSOLE_DEBUG_W_DBL("myExposureDuration_secs\t=", myExposureDuration_secs);
 			myExposure_usecs		=	myExposureDuration_secs * 1000 * 1000;
 			if (myExposure_usecs < cExposureMin_us)
@@ -1484,6 +1490,8 @@ double	myExposure_usecs;
 	//	alpacaErrCode	=	kASCOM_Err_InternalError;
 		exit(0);
 	}
+
+	return kASCOM_Err_Success;
 }
 
 
@@ -1729,7 +1737,7 @@ int					newBinValue;
 		if (foundKeyWord)
 		{
 			newBinValue	=	atoi(argumentString);
-			if ((newBinValue >= 1) && (newBinValue <= cMaxbinY))
+                        if ((newBinValue >= 1) && (newBinValue <= cMaxbinY))
 			{
 				cCurrentBinY	=	newBinValue;
 				alpacaErrCode	=	kASCOM_Err_Success;
@@ -1819,7 +1827,10 @@ int					newValue;
 		if (foundKeyWord)
 		{
 			newValue	=	atoi(argumentString);
-			if ((newValue >= 1) && (newValue <= cCameraXsize))
+			// ?????
+			// CONFORM expects no erron, even if PUT /numx/ in case newValue > cCameraXsize / cCurrentBinX
+			// instead, error should be reported on PUT /startexposure/
+			if ((newValue >= 1))// && (newValue <= cCameraXsize))
 			{
 				cNumX			=	newValue;
 				alpacaErrCode	=	kASCOM_Err_Success;
@@ -1862,7 +1873,10 @@ int					newValue;
 		if (foundKeyWord)
 		{
 			newValue	=	atoi(argumentString);
-			if ((newValue >= 1) && (newValue <= cCameraYsize))
+                        // ?????
+                        // CONFORM expects no erron, even if PUT /numy/ in case newValue > cCameraXsize / cCurrentBinX
+                        // instead, error should be reported on PUT /startexposure/
+                        if ((newValue >= 1)) // && (newValue <= cCameraXsize))
 			{
 				cNumY			=	newValue;
 				alpacaErrCode	=	kASCOM_Err_Success;
@@ -1870,7 +1884,7 @@ int					newValue;
 			else
 			{
 				alpacaErrCode	=	kASCOM_Err_InvalidValue;
-				GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
+                                GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
 				CONSOLE_DEBUG(alpacaErrMsg);
 			}
 		}
@@ -1962,7 +1976,7 @@ int					newValue;
 			else
 			{
 				alpacaErrCode	=	kASCOM_Err_InvalidValue;
-				GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
+                                GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
 				CONSOLE_DEBUG(alpacaErrMsg);
 			}
 		}
@@ -2007,7 +2021,7 @@ int					newValue;
 			else
 			{
 				alpacaErrCode	=	kASCOM_Err_InvalidValue;
-				GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
+                                GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, "Value out of range");
 				CONSOLE_DEBUG(alpacaErrMsg);
 			}
 		}
@@ -2608,7 +2622,43 @@ double				currExposure_secs;
 	{
 //		CONSOLE_DEBUG_W_STR("contentData\t=",	reqData->contentData);
 
-		ProcessExposureOptions(reqData);
+		alpacaErrCode = ProcessExposureOptions(reqData, alpacaErrMsg);
+		if(alpacaErrCode != kASCOM_Err_Success)
+		{
+			return alpacaErrCode;
+		}
+
+                if(cNumX > cCameraXsize / cCurrentBinX)
+                {
+                        char expectedErrMsg[64];
+                        sprintf(expectedErrMsg, "X size larger than binned chip size, Bin %dx%d", cCurrentBinX, cCurrentBinX);
+                        GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, expectedErrMsg);
+                        return kASCOM_Err_InvalidValue;
+                }
+
+                if(cNumY > cCameraYsize / cCurrentBinY)
+                {
+                        char expectedErrMsg[64];
+                        sprintf(expectedErrMsg, "X size larger than binned chip size, Bin %dx%d", cCurrentBinX, cCurrentBinX);
+                        GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, expectedErrMsg);
+                        return kASCOM_Err_InvalidValue;
+                }
+		if(cStartX > cCameraXsize / cCurrentBinX)
+		{
+			char expectedErrMsg[64];
+			sprintf(expectedErrMsg, "X start outside binned chip size, Bin %dx%d", cCurrentBinX, cCurrentBinY);
+			GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, expectedErrMsg);
+			return kASCOM_Err_InvalidValue;
+		}
+
+		if(cStartY > cCameraYsize / cCurrentBinY)
+		{
+			char expectedErrMsg[64];
+			sprintf(expectedErrMsg, "Y start outside binned chip size, Bin %dx%d", cCurrentBinX, cCurrentBinX);
+			GENERATE_ALPACAPI_ERRMSG(alpacaErrMsg, expectedErrMsg);
+			return kASCOM_Err_InvalidValue;
+		}
+
 
 		cAVIfourcc					=	0;
 		cFrameRate					=	0;
@@ -2774,7 +2824,7 @@ char				timeString[64];
 
 	if (cLastExposureStartTime.tv_sec > 0)
 	{
-		FormatTimeString(	&cLastExposureStartTime.tv_sec,
+		FormatTimeStringISO8601(	&cLastExposureStartTime,
 							timeString);
 
 	//	CONSOLE_DEBUG(timeString);
@@ -2807,7 +2857,8 @@ int					exposureStatatus;
 	if (reqData != NULL)
 	{
 		exposureStatatus	=	Check_Exposure(false);
-		if (exposureStatatus == kExposure_Success)
+		if ( exposureStatatus == kExposure_Success ||
+		    (exposureStatatus == kExposure_Idle && cNewImageReadyToDownload))
 		{
 			imageReady	=	true;
 		}
@@ -2850,7 +2901,7 @@ double				exposureTimeSecs;
 
 	//========================================================================================
 	//*	record the time the image was taken
-	FormatTimeString(&cLastExposureStartTime.tv_sec, imageTimeString);
+	FormatTimeStringISO8601(&cLastExposureStartTime, imageTimeString);
 	JsonResponse_Add_String(mySocket,
 							reqData->jsonTextBuffer,
 							kMaxJsonBuffLen,
@@ -2918,7 +2969,8 @@ double				exposureTimeSecs;
 		JsonResponse_Add_Int32(	mySocket,
 								reqData->jsonTextBuffer,
 								kMaxJsonBuffLen,
-								"ArrayType",
+//								"ArrayType",
+								"Type",
 								2,
 								INCLUDE_COMMA);
 
@@ -2937,6 +2989,21 @@ double				exposureTimeSecs;
 		CONSOLE_DEBUG_W_NUM("pixelCount\t=", pixelCount);
 		for (ii=0; ii<pixelCount; ii++)
 		{
+			if(ii % cROIinfo.currentROIheight == 0)
+			{
+				if(ii > 0)
+				{
+					JsonResponse_Add_ArrayEnd(	mySocket,
+									reqData->jsonTextBuffer,
+									kMaxJsonBuffLen,
+									INCLUDE_COMMA);
+
+				}
+				JsonResponse_Add_ArrayStart(	mySocket,
+								reqData->jsonTextBuffer,
+								kMaxJsonBuffLen,
+								nullptr);
+			}
 			switch(cROIinfo.currentROIimageType)
 			{
 				case kImageType_RAW8:
@@ -2981,6 +3048,11 @@ double				exposureTimeSecs;
 		}
 
 		CONSOLE_DEBUG_W_NUM("Lines sent\t=", ii);
+
+		JsonResponse_Add_ArrayEnd(	mySocket,
+									reqData->jsonTextBuffer,
+									kMaxJsonBuffLen,
+									NO_COMMA);
 
 		JsonResponse_Add_ArrayEnd(	mySocket,
 									reqData->jsonTextBuffer,
@@ -3840,7 +3912,11 @@ double				deltaExp_secs;
 		sequenceCnt			=	5;
 
 		//*	All of these fields are optional
-		ProcessExposureOptions(reqData);
+		alpacaErrCode = ProcessExposureOptions(reqData, alpacaErrMsg);
+		if(alpacaErrCode != kASCOM_Err_Success)
+		{
+			return alpacaErrCode;
+		}
 
 
 		sequenceCntFound	=	GetKeyWordArgument(	reqData->contentData,
@@ -3981,7 +4057,11 @@ bool				recTimeFound;
 //		DumpRequestStructure(__FUNCTION__, reqData);
 
 		//*	look for parameters in the request
-		ProcessExposureOptions(reqData);
+		alpacaErrCode = ProcessExposureOptions(reqData, alpacaErrMsg);
+		if(alpacaErrCode != kASCOM_Err_Success)
+		{
+			return alpacaErrCode;
+		}
 
 		recTimeFound	=	GetKeyWordArgument(	reqData->contentData,
 												"recordtime",

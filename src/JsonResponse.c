@@ -1,3 +1,4 @@
+
 //**************************************************************************
 //*	Name:			JsonResponse.c
 //*
@@ -398,6 +399,16 @@ int		payloadLen;
 		payloadLen	+=	20;
 
 		JsonRespnse_XmitIfFull(socketFD, jsonTextBuffer, maxLen, payloadLen);
+
+		if(itemName == NULL)
+		{
+	#ifdef _MAKE_JSON_PRETTY_
+			strcat(jsonTextBuffer, "\t\t[");
+	#else
+			strcat(jsonTextBuffer, "[");
+	#endif
+			return;
+		}
 
 	#ifdef _MAKE_JSON_PRETTY_
 		strcat(jsonTextBuffer, "\t\t\"");

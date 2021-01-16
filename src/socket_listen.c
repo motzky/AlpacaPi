@@ -102,6 +102,19 @@ struct	sockaddr_in serv_addr;
 }
 
 //*****************************************************************************
+void	SocketListen_Close()
+{
+	if(gSocketFD < 0)
+	{
+		return;
+	}
+
+	shutdown(gSocketFD, SHUT_RDWR);
+	close(gSocketFD);
+}
+
+
+//*****************************************************************************
 //void	SocketListen_SetCallback(SocketData_Callback *callBackPtr)
 void	SocketListen_SetCallback(SocketData_Callback callBackPtr)
 {
